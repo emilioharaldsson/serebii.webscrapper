@@ -31,29 +31,33 @@ def scrape_movedex(url):
         'accuracy': columns[6].text.strip(),
         'gen': columns[7].text.strip()
     }
-    move_list.append(data)
+        move_list.append(data)
 
     with open ("moves.json", "w", encoding='utf-8') as f:
         json.dump(move_list, f, indent = 4)
 
 def filter_for_pokemon_name(td):
     a = td.find('a')
-    return a and a.get('href') and a.get('href').startswith('/pokemon/') and not a.get('href').startswith('/pokemon/type/')
+    return a and a.get('href') and a.get('href').startswith('/pokemon/')
 
 def filter_for_pokemon_type(td):
     a= td.find('a')
     return a and a.get('href') and a.get('href').startswith('/pokemon/type/')
      
-def filter_for_pokemon_nature()
+def filter_for_pokemon_nature(td):
+    a = td.find('a')
+    return a and a.get('href') and a.get('href').startswith('/abilitydex/')
 
 def filter_for_pokemon_stats(td):
     return td.find('a') is None;
 
 def get_pokemon_name(tr):
+    a = []
     td_elements = tr.find_all('td')
     for td in td_elements:
         if filter_for_pokemon_name(td):
-            return td.find('a').text
+            a.append(td.find('a').text)
+    return a
 
 def get_pokemon_stats_from_row(tr):
     stats = []
@@ -73,8 +77,19 @@ def get_pokemon_types(tr):
                 types.append(a['href'].split('/')[-1])
     return types
 
+def get_pokemon_natures(tr):
+    natures = []
+    all_tds = tr.find_all('td')
+    for td in all_tds:
+        if filter_for_pokemon_nature(td):
+            all_a = td.find_all('a')
+            for a in all_a:
+                natures.append(a.text)
+    return natures
+            
 
-def scrape_pokedex(url):  
+def scrape_pokedex(url):
+    pokedex = []  
     response = requests.get(url)
     soup = BeautifulSoup(response.content, "html.parser")
     all_rows = soup.find_all('tr')
@@ -83,17 +98,26 @@ def scrape_pokedex(url):
         stats = get_pokemon_stats_from_row(pokemon)
         pokemon_name = get_pokemon_name(pokemon)
         pokemon_types = get_pokemon_types(pokemon)
+        pokemon_natures = get_pokemon_natures(pokemon)
+        pokedex.append({
+            "no_#": stats[0],
+            "name": pokemon_name[2],
+            "hp" : stats[1],
+            "attack": stats[2],
+            "defence": stats[3],
+            "sp_attack": stats[4],
+            "sp_defence": stats[5],
+            "speed" : stats[6],
+            "type": pokemon_types,
+            "nature": pokemon_natures
+        })
+    with open ("pokedex.json", "w", encoding='utf-8') as f:
+        json.dump(pokedex, f, indent = 4)
         
-        # td_elements = pokemon.find_all('td')
-        # for td in td_elements:
-        #     stats = get_pokemon_stats_from_row(td)
-        #     rich.print(stats)
-            # if filter_for_pokemon_name(td):
-            #     rich.print(td.find('a').text)
-
 
 
 def run():
+    scrape_movedex(MOVE_URL)
     scrape_pokedex(POKEDEX_URL)
 
 
