@@ -40,6 +40,12 @@ def filter_for_pokemon_name(td):
     a = td.find('a')
     return a and a.get('href') and a.get('href').startswith('/pokemon/') and not a.get('href').startswith('/pokemon/type/')
 
+def filter_for_pokemon_type(td):
+    a= td.find('a')
+    return a and a.get('href') and a.get('href').startswith('/pokemon/type/')
+     
+def filter_for_pokemon_nature()
+
 def filter_for_pokemon_stats(td):
     return td.find('a') is None;
 
@@ -57,6 +63,15 @@ def get_pokemon_stats_from_row(tr):
             stats.append(td.text.strip())
     return stats
 
+def get_pokemon_types(tr):
+    types = []
+    all_tds = tr.find_all('td')
+    for td in all_tds:
+        if filter_for_pokemon_type(td):
+            all_anchords = td.find_all('a')
+            for a in all_anchords:
+                types.append(a['href'].split('/')[-1])
+    return types
 
 
 def scrape_pokedex(url):  
@@ -67,7 +82,8 @@ def scrape_pokedex(url):
     for pokemon in pokemon_rows:
         stats = get_pokemon_stats_from_row(pokemon)
         pokemon_name = get_pokemon_name(pokemon)
-
+        pokemon_types = get_pokemon_types(pokemon)
+        
         # td_elements = pokemon.find_all('td')
         # for td in td_elements:
         #     stats = get_pokemon_stats_from_row(td)
