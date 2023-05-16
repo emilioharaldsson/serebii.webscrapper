@@ -1,17 +1,16 @@
 import json 
 import requests
 from bs4 import BeautifulSoup
-
+import rich
 
 POKEDEX_URL = "https://www.serebii.net/pokemon/nationalpokedex.shtml"
 
 MOVE_URL = "https://bulbapedia.bulbagarden.net/wiki/List_of_moves#bulbapedia"
 
-def filter_pokemon_rows(rows):
-    f_rows = []
-    for row in rows:
-        if row.find('td', {'class' : 'fooinfo', 'align' : 'center'}):
-            f_rows.append(row)
+def has_pokemon(tr):
+    td = tr.find('td', {'class': 'fooinfo', 'align': 'center'})
+    return td is not None
+
 
 
 def scrape_movedex(url):
@@ -37,16 +36,49 @@ def scrape_movedex(url):
     with open ("moves.json", "w", encoding='utf-8') as f:
         json.dump(move_list, f, indent = 4)
 
+def filter_for_pokemon_name(td):
+    a = td.find('a')
+    return a and a.get('href') and a.get('href').startswith('/pokemon/') and not a.get('href').startswith('/pokemon/type/')
+
+def filter_for_pokemon_stats(td):
+    return td.find('a') is None;
+
+def get_pokemon_name(tr):
+    td_elements = tr.find_all('td')
+    for td in td_elements:
+        if filter_for_pokemon_name(td):
+            return td.find('a').text
+
+def get_pokemon_stats_from_row(tr):
+    stats = []
+    tds = tr.find_all('td')
+    for td in tds:
+        if filter_for_pokemon_stats(td):
+            stats.append(td.text.strip())
+    return stats
+
+
+
 def scrape_pokedex(url):  
     response = requests.get(url)
     soup = BeautifulSoup(response.content, "html.parser")
     all_rows = soup.find_all('tr')
-    pokemon_rows = filter_pokemon_rows(all_rows)
+    pokemon_rows = [row for row in all_rows if has_pokemon(row)]
+    for pokemon in pokemon_rows:
+        stats = get_pokemon_stats_from_row(pokemon)
+        pokemon_name = get_pokemon_name(pokemon)
+
+        # td_elements = pokemon.find_all('td')
+        # for td in td_elements:
+        #     stats = get_pokemon_stats_from_row(td)
+        #     rich.print(stats)
+            # if filter_for_pokemon_name(td):
+            #     rich.print(td.find('a').text)
 
 
 
 def run():
-    pass
+    scrape_pokedex(POKEDEX_URL)
 
 
 if __name__ == "__main__":
